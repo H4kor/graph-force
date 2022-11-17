@@ -13,6 +13,8 @@ struct Edge {
     weight: f32,
 }
 
+type EdgeMatrix = Arc<RwLock<Vec<Vec<Edge>>>>;
+
 fn nodes_list(size: usize) -> Arc<Vec<RwLock<Node>>> {
     let mut nodes = Vec::new();
     for _ in 0..size {
@@ -25,39 +27,62 @@ fn nodes_list(size: usize) -> Arc<Vec<RwLock<Node>>> {
     Arc::new(nodes)
 }
 
-fn connection_matrix(size: usize) -> Arc<RwLock<Vec<Vec<Edge>>>> {
-    let mut rng = rand::thread_rng();
-
+fn connection_matrix(size: usize) -> EdgeMatrix {
     let mut matrix = Vec::with_capacity(size);
     for _ in 0..size {
         let mut row = Vec::with_capacity(size);
         for _ in 0..size {
-            let p: f32 = rng.gen();
-            row.push(Edge { weight: if p < 0.1 {1.0} else {0.0} });
+            row.push(Edge { weight: 0.0});
         }
         matrix.push(row);
     }
     Arc::new(RwLock::new(matrix))
 }
 
-fn main()  -> std::io::Result<()> {
+/**
+ * Read Graph data from file
+ * Format:
+ *  - Little endian
+ *  - 4 bytes: number of nodes(int)
+ *  - 12 bytes: nodeA(int), nodeB(int), weight(float)
+ */
+fn read_graph(file_name: &str) -> (usize, EdgeMatrix) {
+    let mut file = File::open(file_name).expect("file not found");
+    let mut size_buffer = [0; 4];
+    file.read_exact(&mut size_buffer).expect("buffer overflow");
+    let size = u32::from_le_bytes(size_buffer) as usize;
+    let matrix_ptr = connection_matrix(size);
+    {
+        let mut matrix = matrix_ptr.write().unwrap();
+        let mut buffer = [0; 12];
+        while file.read_exact(&mut buffer).is_ok() {
+            let node_a = u32::from_le_bytes(buffer[0..4].try_into().unwrap()) as usize;
+            let node_b = u32::from_le_bytes(buffer[4..8].try_into().unwrap()) as usize;
+            let weight = f32::from_le_bytes(buffer[8..12].try_into().unwrap());
+            matrix[node_a][node_b].weight = weight;
+            matrix[node_b][node_a].weight = weight;
+        }
+    }
+    (size, matrix_ptr)
+}
+
+fn main() -> std::io::Result<()> {
 
     const C_REP: f32 = 0.1;
     const C_SPRING: f32 = 0.1;
     const ITER: usize = 200;
-
-    let size = 5000;
-    let threads = 8;
-
+    const THREADS: usize = 8;
+    
+    // let edges = connection_matrix(size);
+    let (size, edges): (usize, EdgeMatrix) = read_graph("../graph.bin");
+    println!("Size: {}", size);
     let nodes = nodes_list(size);
     let nodes_next = nodes_list(size);
 
-    let edges = connection_matrix(size);
-
     for epoch in 0..ITER {
         let mut handles = vec![];
-        let chunks = size / threads;
-        for i in 0..threads {
+        let chunks = size / THREADS;
+        for i in 0..THREADS {
             let nodes = nodes.clone();
             let nodes_next = nodes_next.clone();
             let edges = edges.clone();

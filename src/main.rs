@@ -4,6 +4,8 @@ use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
 
+mod utils;
+
 struct Node {
     x: f32,
     y: f32,
@@ -79,16 +81,16 @@ fn main() -> std::io::Result<()> {
     let nodes = nodes_list(size);
     let nodes_next = nodes_list(size);
 
+    let chunks = utils::chunk_borders(size, THREADS);
     for epoch in 0..ITER {
         let mut handles = vec![];
-        let chunks = size / THREADS;
         for i in 0..THREADS {
             let nodes = nodes.clone();
             let nodes_next = nodes_next.clone();
             let edges = edges.clone();
+            let chunk = chunks[i].clone();
             let handle = thread::spawn(move || {
-                for j in 0..chunks {
-                    let n = i * chunks + j;
+                for n in chunk {
                     let node = nodes[n].read().unwrap();
                     let edges = edges.read().unwrap();
     

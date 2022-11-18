@@ -1,5 +1,6 @@
 mod utils;
 mod spring_model;
+mod my_model;
 mod graph;
 
 use rand::Rng;
@@ -71,7 +72,8 @@ fn main() -> std::io::Result<()> {
     let nodes = nodes_list(size);
     let nodes_next = nodes_list(size);
 
-    let model = Arc::new(RwLock::new(spring_model::InitialModel::new(edges, size)));
+    // let model = Arc::new(RwLock::new(spring_model::InitialModel::new(edges, size)));
+    let model = Arc::new(RwLock::new(my_model::MyModel::new(edges, size)));
 
     let chunks = utils::gen_chunks(size, THREADS);
     for epoch in 0..ITER {

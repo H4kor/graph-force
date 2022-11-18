@@ -2,6 +2,7 @@ use crate::graph::{EdgeMatrix, NodeVector, Node};
 
 pub struct MyModel {
     edges: EdgeMatrix,
+    ranks: Vec<f32>,
     size: usize,
     opt_dist: f32,
     c: f32,
@@ -13,7 +14,22 @@ impl MyModel {
     pub fn new(edges: EdgeMatrix, size: usize, iterations: usize) -> MyModel {
         let opt_dist = 1.0 / (size as f32).sqrt();
         let c = 0.1;
-        MyModel{ edges, size, opt_dist, c: c , dc: c / ((iterations + 1) as f32) }
+        let mut ranks = vec![0.0; size];
+        {
+            let edges = edges.read().unwrap();
+            for i in 0..size {
+                ranks[i] = edges[i].iter().map(|e| e.weight).sum();
+            }
+        }
+
+        MyModel{
+            edges,
+            ranks,
+            size,
+            opt_dist,
+            c: c ,
+            dc: c / ((iterations + 1) as f32)
+        }
     }
 
     pub fn prepare(& mut self, _nodes: &NodeVector) {
@@ -55,7 +71,7 @@ impl MyModel {
                 node_x -= f_rep_x;
                 node_y -= f_rep_y;
             } else {
-                let f_spring = self.c * 0.5 * (dist - self.opt_dist);
+                let f_spring = self.c * 0.5 * (dist - self.opt_dist) / self.ranks[i_node];
                 let f_spring_x = f_spring * unit_x;
                 let f_spring_y = f_spring * unit_y;
                 node_x += f_spring_x;

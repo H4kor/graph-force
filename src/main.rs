@@ -1,28 +1,21 @@
+mod utils;
+mod spring_model;
+mod graph;
+
 use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::{Arc, RwLock};
 use std::thread;
+use graph::{EdgeMatrix, NodeVector, Node, Edge};
 
-mod utils;
 
-struct Node {
-    x: f32,
-    y: f32,
-}
-
-struct Edge {
-    weight: f32,
-}
-
-type EdgeMatrix = Arc<RwLock<Vec<Vec<Edge>>>>;
-
-fn nodes_list(size: usize) -> Arc<Vec<RwLock<Node>>> {
+fn nodes_list(size: usize) -> NodeVector {
     let mut nodes = Vec::new();
     for _ in 0..size {
         let node = RwLock::new(Node {
-            x: rand::thread_rng().gen_range(0.0..100.0),
-            y: rand::thread_rng().gen_range(0.0..100.0),
+            x: rand::thread_rng().gen_range(-0.5..0.5),
+            y: rand::thread_rng().gen_range(-0.5..0.5),
         });
         nodes.push(node);
     }
@@ -69,73 +62,32 @@ fn read_graph(file_name: &str) -> (usize, EdgeMatrix) {
 }
 
 fn main() -> std::io::Result<()> {
-    const C_REP: f32 = 0.1;
-    const C_SPRING: f32 = 0.1;
     const ITER: usize = 200;
     const THREADS: usize = 8;
 
     // let edges = connection_matrix(size);
-    let (size, edges): (usize, EdgeMatrix) = read_graph("../graph.bin");
+    let (size, edges): (usize, EdgeMatrix) = read_graph("../debug_graph.bin");
     println!("Size: {}", size);
     let nodes = nodes_list(size);
     let nodes_next = nodes_list(size);
 
-    let opt_dist = 10.0 / (size as f32).sqrt();
+    let model = Arc::new(RwLock::new(spring_model::InitialModel::new(edges, size)));
 
     let chunks = utils::gen_chunks(size, THREADS);
     for epoch in 0..ITER {
+        model.write().unwrap().prepare(&nodes);
         let mut handles = vec![];
         for i in 0..THREADS {
             let nodes = nodes.clone();
             let nodes_next = nodes_next.clone();
-            let edges = edges.clone();
             let chunk = chunks[i].clone();
+            let model = model.clone();
             let handle = thread::spawn(move || {
                 for n in chunk {
-                    let node = nodes[n].read().unwrap();
-                    let edges = edges.read().unwrap();
-
-                    let mut node_x = node.x;
-                    let mut node_y = node.y;
-
-                    for o in 0..size {
-                        if o == n {
-                            continue;
-                        }
-                        let o_x: f32;
-                        let o_y: f32;
-                        {
-                            let other = nodes[o].read().unwrap();
-                            o_x = other.x;
-                            o_y = other.y;
-                        }
-
-                        let d_x = o_x - node_x;
-                        let d_y = o_y - node_y;
-                        let dist = (d_x * d_x + d_y * d_y).sqrt().max(0.0001);
-                        let unit_x = d_x / dist;
-                        let unit_y = d_y / dist;
-
-                        let edge = edges[n][o].weight;
-
-                        if edge == 0.0 {
-                            let f_rep = -C_REP / (dist).powi(2);
-                            let f_rep_x = f_rep * unit_x;
-                            let f_rep_y = f_rep * unit_y;
-    
-                            node_x += f_rep_x;
-                            node_y += f_rep_y;
-                        } else {
-                            let f_spring = C_SPRING * (dist / opt_dist).log(2.0);
-                            let f_spring_x = f_spring * unit_x;
-                            let f_spring_y = f_spring * unit_y;
-                            node_x += f_spring_x;
-                            node_y += f_spring_y;
-                        }
-                    }
+                    let update = model.read().unwrap().step(&nodes,n);
                     let mut result = nodes_next[n].write().unwrap();
-                    result.x = node_x;
-                    result.y = node_y;
+                    result.x = update.x;
+                    result.y = update.y;
                 }
             });
             handles.push(handle);

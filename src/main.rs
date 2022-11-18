@@ -63,17 +63,17 @@ fn read_graph(file_name: &str) -> (usize, EdgeMatrix) {
 }
 
 fn main() -> std::io::Result<()> {
-    const ITER: usize = 200;
+    const ITER: usize = 50;
     const THREADS: usize = 8;
 
     // let edges = connection_matrix(size);
-    let (size, edges): (usize, EdgeMatrix) = read_graph("../debug_graph.bin");
+    let (size, edges): (usize, EdgeMatrix) = read_graph("../graph.bin");
     println!("Size: {}", size);
-    let nodes = nodes_list(size);
-    let nodes_next = nodes_list(size);
+    let mut nodes = nodes_list(size);
+    let mut nodes_next = nodes_list(size);
 
     // let model = Arc::new(RwLock::new(spring_model::InitialModel::new(edges, size)));
-    let model = Arc::new(RwLock::new(my_model::MyModel::new(edges, size)));
+    let model = Arc::new(RwLock::new(my_model::MyModel::new(edges, size, ITER)));
 
     let chunks = utils::gen_chunks(size, THREADS);
     for epoch in 0..ITER {
@@ -98,14 +98,12 @@ fn main() -> std::io::Result<()> {
         for handle in handles {
             handle.join().unwrap();
         }
-
-        for i in 0..size {
-            let mut node = nodes[i].write().unwrap();
-            let node_next = nodes_next[i].read().unwrap();
-            node.x = node_next.x;
-            node.y = node_next.y;
-        }
-
+    
+        // swap nodes and nodes_next
+        let tmp = nodes.clone();
+        nodes = nodes_next.clone();
+        nodes_next = tmp.clone();
+        
         let mut file = File::create(format!("result/{:04}.txt", epoch))?;
         for i in 0..size {
             let node = nodes[i].read().unwrap();

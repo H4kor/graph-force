@@ -1,23 +1,23 @@
 use crate::graph::{EdgeMatrix, NodeVector, Node};
 
-
-const C_REP: f32 = 0.1;
-const C_SPRING: f32 = 0.1;
-
 pub struct MyModel {
     edges: EdgeMatrix,
     size: usize,
     opt_dist: f32,
+    c: f32,
+    dc: f32,
 }
 
 impl MyModel {
 
-    pub fn new(edges: EdgeMatrix, size: usize) -> MyModel {
+    pub fn new(edges: EdgeMatrix, size: usize, iterations: usize) -> MyModel {
         let opt_dist = 1.0 / (size as f32).sqrt();
-        MyModel{ edges, size, opt_dist }
+        let c = 0.1;
+        MyModel{ edges, size, opt_dist, c: c , dc: c / ((iterations + 1) as f32) }
     }
 
-    pub fn prepare(& mut self, nodes: &NodeVector) {
+    pub fn prepare(& mut self, _nodes: &NodeVector) {
+        self.c -= self.dc;
     }
 
     pub fn step(&self, nodes: &NodeVector, i_node: usize) -> Node {
@@ -48,14 +48,14 @@ impl MyModel {
             let edge = edges[i_node][o].weight;
 
             if edge == 0.0 {
-                let f_rep = (C_REP / (dist).powi(2)).min(C_REP);
+                let f_rep = (self.c / (dist).powi(2)).min(self.c);
                 let f_rep_x = f_rep * unit_x;
                 let f_rep_y = f_rep * unit_y;
 
                 node_x -= f_rep_x;
                 node_y -= f_rep_y;
             } else {
-                let f_spring = C_SPRING * 0.5 * (dist - self.opt_dist);
+                let f_spring = self.c * 0.5 * (dist - self.opt_dist);
                 let f_spring_x = f_spring * unit_x;
                 let f_spring_y = f_spring * unit_y;
                 node_x += f_spring_x;

@@ -63,11 +63,11 @@ fn read_graph(file_name: &str) -> (usize, EdgeMatrix) {
 }
 
 fn main() -> std::io::Result<()> {
-    const ITER: usize = 50;
+    const ITER: usize = 600;
     const THREADS: usize = 8;
 
     // let edges = connection_matrix(size);
-    let (size, edges): (usize, EdgeMatrix) = read_graph("../graph.bin");
+    let (size, edges): (usize, EdgeMatrix) = read_graph("../debug_graph.bin");
     println!("Size: {}", size);
     let mut nodes = nodes_list(size);
     let mut nodes_next = nodes_list(size);

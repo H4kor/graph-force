@@ -27,7 +27,7 @@ impl MyModel {
             ranks,
             size,
             opt_dist,
-            c: c ,
+            c: c,
             dc: c / ((iterations + 1) as f32)
         }
     }
@@ -41,8 +41,12 @@ impl MyModel {
         let node = nodes[i_node].read().unwrap();
         let edges = self.edges.read().unwrap();
 
-        let mut node_x = node.x;
-        let mut node_y = node.y;
+        let node_x = node.x;
+        let node_y = node.y;
+
+        let mut sum_x = 0.0;
+        let mut sum_y = 0.0;
+
         for o in 0..self.size {
             if o == i_node {
                 continue;
@@ -64,23 +68,30 @@ impl MyModel {
             let edge = edges[i_node][o].weight;
 
             if edge == 0.0 {
-                let f_rep = (self.c / (dist).powi(2)).min(self.c);
+                let f_rep = dist.powi(2).recip().min(self.opt_dist);
                 let f_rep_x = f_rep * unit_x;
                 let f_rep_y = f_rep * unit_y;
 
-                node_x -= f_rep_x;
-                node_y -= f_rep_y;
+                sum_x -= f_rep_x;
+                sum_y -= f_rep_y;
             } else {
-                let f_spring = self.c * 0.5 * (dist - self.opt_dist) / self.ranks[i_node];
+                let f_spring = 0.5 * (dist - self.opt_dist);
                 let f_spring_x = f_spring * unit_x;
                 let f_spring_y = f_spring * unit_y;
-                node_x += f_spring_x;
-                node_y += f_spring_y;
+                sum_x += f_spring_x;
+                sum_y += f_spring_y;
             }
         }
+
+        // limit the movement
+        // TODO: find a good upper bound
+        let sum_l = (sum_x * sum_x + sum_y * sum_y).sqrt().max(1e-6).recip() * self.c;
+        let sum_x = sum_x * sum_l;
+        let sum_y = sum_y * sum_l;
+        
         Node {
-            x: node_x,
-            y: node_y,
+            x: node_x + sum_x,
+            y: node_y + sum_y,
         }        
     }
 }

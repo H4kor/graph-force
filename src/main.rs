@@ -63,7 +63,7 @@ fn read_graph(file_name: &str) -> (usize, EdgeMatrix) {
 }
 
 fn main() -> std::io::Result<()> {
-    const ITER: usize = 600;
+    const ITER: usize = 5000;
     const THREADS: usize = 8;
 
     // let edges = connection_matrix(size);

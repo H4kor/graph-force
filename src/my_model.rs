@@ -12,7 +12,7 @@ pub struct MyModel {
 impl MyModel {
 
     pub fn new(edges: EdgeMatrix, size: usize, iterations: usize) -> MyModel {
-        let opt_dist = 1.0 / (size as f32).sqrt();
+        let opt_dist = 1.0;
         let c = 0.1;
         let mut ranks = vec![0.0; size];
         {

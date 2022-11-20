@@ -1,32 +1,37 @@
-use crate::graph::{EdgeMatrix, Node, NodeVector};
-
-pub struct MyModel {
+use crate::graph::{new_edge_matrix, EdgeMatrix, Node, NodeVector};
+use crate::model::ForceModel;
+pub struct SimpleSpringModel {
     edges: EdgeMatrix,
     size: usize,
-    opt_dist: f32,
     c: f32,
     dc: f32,
 }
 
-impl MyModel {
-    pub fn new(edges: EdgeMatrix, size: usize, iterations: usize) -> MyModel {
-        let opt_dist = 1.0;
-        let c = 0.1;
-
-        MyModel {
-            edges,
-            size,
-            opt_dist,
-            c: c,
-            dc: c / ((iterations + 1) as f32),
+impl SimpleSpringModel {
+    pub fn new(c: f32) -> Self {
+        SimpleSpringModel {
+            edges: new_edge_matrix(0),
+            size: 0,
+            c,
+            dc: 0.0,
         }
     }
+}
 
-    pub fn prepare(&mut self, _nodes: &NodeVector) {
+impl ForceModel for SimpleSpringModel {
+    fn init(&mut self, edges: EdgeMatrix, size: usize, iterations: usize) {
+        let dc = self.c / ((iterations + 1) as f32);
+
+        self.edges = edges;
+        self.size = size;
+        self.dc = dc;
+    }
+
+    fn prepare(&mut self, _nodes: &NodeVector) {
         self.c -= self.dc;
     }
 
-    pub fn step(&self, nodes: &NodeVector, i_node: usize) -> Node {
+    fn step(&self, nodes: &NodeVector, i_node: usize) -> Node {
         let node = nodes[i_node].read().unwrap();
         let edges = self.edges.read().unwrap();
 
@@ -57,14 +62,14 @@ impl MyModel {
             let edge = edges[i_node][o].weight;
 
             if edge == 0.0 {
-                let f_rep = dist.powi(2).recip().min(self.opt_dist);
+                let f_rep = dist.powi(2).recip().min(1.0);
                 let f_rep_x = f_rep * unit_x;
                 let f_rep_y = f_rep * unit_y;
 
                 sum_x -= f_rep_x;
                 sum_y -= f_rep_y;
             } else {
-                let f_spring = 0.5 * (dist - self.opt_dist);
+                let f_spring = 0.5 * (dist - 1.0);
                 let f_spring_x = f_spring * unit_x;
                 let f_spring_y = f_spring * unit_y;
                 sum_x += f_spring_x;

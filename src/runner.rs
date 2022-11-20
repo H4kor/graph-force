@@ -1,5 +1,5 @@
 use crate::graph::{new_edge_matrix, new_node_vector, EdgeMatrix};
-use crate::spring_model;
+use crate::model::ForceModel;
 use crate::utils;
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -30,22 +30,21 @@ impl Runner {
         }
     }
 
-    pub fn layout(
+    pub fn layout<T: 'static + ForceModel + Sync + Send>(
         self: &Self,
         number_of_nodes: usize,
         edge_list: Vec<(u32, u32)>,
+        model: Arc<RwLock<T>>,
     ) -> Vec<(f32, f32)> {
         // let edges = connection_matrix(size);
         let edges = edge_matrix_from_edge_list(number_of_nodes, edge_list);
         let mut nodes = new_node_vector(number_of_nodes);
         let mut nodes_next = new_node_vector(number_of_nodes);
 
-        // let model = Arc::new(RwLock::new(spring_model::InitialModel::new(edges, number_of_nodes)));
-        let model = Arc::new(RwLock::new(spring_model::MyModel::new(
-            edges,
-            number_of_nodes,
-            self.iterations,
-        )));
+        model
+            .write()
+            .unwrap()
+            .init(edges, number_of_nodes, self.iterations);
 
         let chunks = utils::gen_chunks(number_of_nodes, self.threads);
         for _epoch in 0..self.iterations {

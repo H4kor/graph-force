@@ -1,7 +1,10 @@
 mod graph;
+mod model;
 mod runner;
 mod spring_model;
 mod utils;
+
+use std::sync::{Arc, RwLock};
 
 use pyo3::prelude::*;
 
@@ -13,8 +16,9 @@ fn layout_from_edge_list(
     iter: usize,
     threads: usize,
 ) -> PyResult<Vec<(f32, f32)>> {
+    let model = Arc::new(RwLock::new(spring_model::SimpleSpringModel::new(1.0)));
     let r = runner::Runner::new(iter, threads);
-    Ok(r.layout(number_of_nodes, edges))
+    Ok(r.layout(number_of_nodes, edges, model))
 }
 
 /// A Python module implemented in Rust.

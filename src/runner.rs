@@ -12,9 +12,16 @@ pub struct Runner {
 
 impl Runner {
     pub fn new(iterations: usize, threads: usize) -> Self {
-        Self {
-            iterations,
-            threads,
+        if threads == 0 {
+            match std::thread::available_parallelism() {
+                Ok(threads) => Runner { iterations, threads: threads.get() },
+                Err(_) => Runner { iterations, threads: 1 },
+            }
+        } else {
+            Runner {
+                iterations,
+                threads,
+            }
         }
     }
 

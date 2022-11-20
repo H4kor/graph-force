@@ -1,1 +1,2 @@
 maturin==0.14.1
+pytest==7.2.0

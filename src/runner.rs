@@ -1,4 +1,4 @@
-use crate::graph::{new_edge_matrix, new_node_vector, EdgeMatrix};
+use crate::graph::{new_node_vector, EdgeMatrix};
 use crate::model::ForceModel;
 use crate::utils;
 use std::sync::{Arc, RwLock};
@@ -33,11 +33,10 @@ impl Runner {
     pub fn layout<T: 'static + ForceModel + Sync + Send>(
         self: &Self,
         number_of_nodes: usize,
-        edge_list: Vec<(u32, u32)>,
+        edges: EdgeMatrix,
         model: Arc<RwLock<T>>,
     ) -> Vec<(f32, f32)> {
         // let edges = connection_matrix(size);
-        let edges = edge_matrix_from_edge_list(number_of_nodes, edge_list);
         let mut nodes = new_node_vector(number_of_nodes);
         let mut nodes_next = new_node_vector(number_of_nodes);
 
@@ -85,21 +84,9 @@ impl Runner {
     }
 }
 
-fn edge_matrix_from_edge_list(number_of_nodes: usize, edge_list: Vec<(u32, u32)>) -> EdgeMatrix {
-    let matrix_ptr = new_edge_matrix(number_of_nodes as usize);
-    {
-        let mut matrix = matrix_ptr.write().unwrap();
-        for (node_a, node_b) in edge_list {
-            matrix[node_a as usize][node_b as usize].weight = 1.0;
-            matrix[node_b as usize][node_a as usize].weight = 1.0;
-        }
-    }
-    matrix_ptr
-}
-
 #[cfg(test)]
 mod test {
-    use crate::graph::{Node, NodeVector};
+    use crate::graph::{self, Node, NodeVector};
 
     use super::*;
 
@@ -121,29 +108,11 @@ mod test {
     }
 
     #[test]
-    fn test_edge_matrix_from_edge_list() {
-        let edge_list = vec![(0, 1), (1, 2)];
-        let matrix = edge_matrix_from_edge_list(3, edge_list);
-        let matrix = matrix.read().unwrap();
-        assert_eq!(matrix[0][1].weight, 1.0);
-        assert_eq!(matrix[1][0].weight, 1.0);
-        assert_eq!(matrix[1][2].weight, 1.0);
-        assert_eq!(matrix[2][1].weight, 1.0);
-
-        assert_eq!(matrix[0][0].weight, 0.0);
-        assert_eq!(matrix[1][1].weight, 0.0);
-        assert_eq!(matrix[2][2].weight, 0.0);
-
-        assert_eq!(matrix[0][2].weight, 0.0);
-        assert_eq!(matrix[2][0].weight, 0.0);
-    }
-
-    #[test]
     fn test_layout() {
-        let edge_list = vec![];
         let model = Arc::new(RwLock::new(MockModel { counter: 0 }));
         let runner = Runner::new(10, 1);
-        let result = runner.layout(3, edge_list, model);
+        let edges = graph::new_edge_matrix(3);
+        let result = runner.layout(3, edges, model);
         assert_eq!(result, vec![(0.0, 10.0), (1.0, 10.0), (2.0, 10.0)]);
     }
 }

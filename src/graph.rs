@@ -34,3 +34,46 @@ pub fn new_node_vector(size: usize) -> NodeVector {
     }
     Arc::new(nodes)
 }
+
+pub fn add_edge(matrix: &mut EdgeMatrix, i: usize, j: usize) {
+    let mut edges = matrix.write().unwrap();
+    edges[i][j].weight = 1.0;
+    edges[j][i].weight = 1.0;
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_new_edge_matrix() {
+        let matrix = new_edge_matrix(5);
+        let edges = matrix.read().unwrap();
+        assert_eq!(edges.len(), 5);
+        for row in edges.iter() {
+            assert_eq!(row.len(), 5);
+            for edge in row.iter() {
+                assert_eq!(edge.weight, 0.0);
+            }
+        }
+    }
+
+    #[test]
+    fn test_new_node_vector() {
+        let nodes = new_node_vector(5);
+        assert_eq!(nodes.len(), 5);
+    }
+
+    #[test]
+    fn test_add_edge() {
+        let mut matrix = new_edge_matrix(5);
+        add_edge(&mut matrix, 0, 1);
+        let edges = matrix.read().unwrap();
+        assert_eq!(edges[0][1].weight, 1.0);
+        assert_eq!(edges[1][0].weight, 1.0);
+
+        assert_eq!(edges[0][0].weight, 0.0);
+        assert_eq!(edges[1][1].weight, 0.0);
+    }
+}

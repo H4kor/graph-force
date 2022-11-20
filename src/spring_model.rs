@@ -1,4 +1,4 @@
-use crate::graph::{EdgeMatrix, NodeVector, Node};
+use crate::graph::{EdgeMatrix, Node, NodeVector};
 
 pub struct MyModel {
     edges: EdgeMatrix,
@@ -9,26 +9,24 @@ pub struct MyModel {
 }
 
 impl MyModel {
-
     pub fn new(edges: EdgeMatrix, size: usize, iterations: usize) -> MyModel {
         let opt_dist = 1.0;
         let c = 0.1;
 
-        MyModel{
+        MyModel {
             edges,
             size,
             opt_dist,
             c: c,
-            dc: c / ((iterations + 1) as f32)
+            dc: c / ((iterations + 1) as f32),
         }
     }
 
-    pub fn prepare(& mut self, _nodes: &NodeVector) {
+    pub fn prepare(&mut self, _nodes: &NodeVector) {
         self.c -= self.dc;
     }
 
     pub fn step(&self, nodes: &NodeVector, i_node: usize) -> Node {
-
         let node = nodes[i_node].read().unwrap();
         let edges = self.edges.read().unwrap();
 
@@ -79,10 +77,10 @@ impl MyModel {
         let sum_l = (sum_x * sum_x + sum_y * sum_y).sqrt().max(1e-6).recip() * self.c;
         let sum_x = sum_x * sum_l;
         let sum_y = sum_y * sum_l;
-        
+
         Node {
             x: node_x + sum_x,
             y: node_y + sum_y,
-        }        
+        }
     }
 }

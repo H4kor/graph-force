@@ -15,7 +15,6 @@ pub fn gen_chunks(n: usize, chunks: usize) -> Vec<Range<usize>> {
     borders
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -37,5 +36,4 @@ mod test {
         let borders = gen_chunks(10, 1);
         assert_eq!(borders, vec![(0..10)]);
     }
-
 }

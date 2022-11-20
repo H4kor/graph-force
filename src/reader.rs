@@ -1,4 +1,3 @@
-
 /**
  * Read Graph data from file
  * Format:

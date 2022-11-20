@@ -1,9 +1,13 @@
 [package]
-name = "graph"
+name = "graph_force"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "graph_force"
+crate-type = ["cdylib"]
 
 [dependencies]
 rand = "0.8.5"
+pyo3 = { version = "0.17.3", features = ["extension-module"] }

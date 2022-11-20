@@ -1,16 +1,16 @@
-mod layout;
+mod runner;
 mod utils;
 mod spring_model;
-mod my_model;
 mod graph;
 
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
-#[pyfunction]
-fn layout_from_edge_list(number_of_nodes: usize, edges: Vec<(u32, u32)>) -> PyResult<Vec<(f32, f32)>> {
+#[pyfunction(number_of_nodes, edges, "*", iter=500, threads=0)]
+fn layout_from_edge_list(number_of_nodes: usize, edges: Vec<(u32, u32)>, iter: usize, threads: usize) -> PyResult<Vec<(f32, f32)>> {
+    let r = runner::Runner::new(iter, threads);
     Ok(
-        layout::layout(number_of_nodes, edges)
+        r.layout(number_of_nodes, edges)
     )
 }
 

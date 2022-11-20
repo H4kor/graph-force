@@ -16,6 +16,7 @@ pub fn gen_chunks(n: usize, chunks: usize) -> Vec<Range<usize>> {
 }
 
 
+#[cfg(test)]
 mod test {
     use super::*;
 

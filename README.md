@@ -2,18 +2,10 @@
 
 A python/rust library for embedding graphs in 2D space, using force-directed layouts.
 
-## Development
+## Installation
 
-### Setup
-```
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Build
-```
-maturin develop
+```bash
+pip install graph_force
 ```
 
 ## Usage
@@ -41,3 +33,7 @@ for edge in G.edges:
 pos = graph_force.layout_from_edge_list(len(G.nodes), edges, iter=1000)
 nx.draw(G, {n: pos[i] for n, i in mapping.items()}, node_size=2, width=0.1)
 ```
+
+## Contributing
+
+- [Development](DEVELOPMENT.md)

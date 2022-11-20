@@ -33,7 +33,7 @@ dependencies = [
 
 [[package]]
 name = "graph_force"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "pyo3",
  "rand",

@@ -96,3 +96,54 @@ fn edge_matrix_from_edge_list(number_of_nodes: usize, edge_list: Vec<(u32, u32)>
     }
     matrix_ptr
 }
+
+#[cfg(test)]
+mod test {
+    use crate::graph::{Node, NodeVector};
+
+    use super::*;
+
+    struct MockModel {
+        counter: usize,
+    }
+
+    impl ForceModel for MockModel {
+        fn init(&mut self, _edges: EdgeMatrix, _size: usize, _iterations: usize) {}
+        fn prepare(&mut self, _nodes: &NodeVector) {
+            self.counter += 1;
+        }
+        fn step(&self, _nodes: &NodeVector, i_node: usize) -> Node {
+            Node {
+                x: i_node as f32,
+                y: self.counter as f32,
+            }
+        }
+    }
+
+    #[test]
+    fn test_edge_matrix_from_edge_list() {
+        let edge_list = vec![(0, 1), (1, 2)];
+        let matrix = edge_matrix_from_edge_list(3, edge_list);
+        let matrix = matrix.read().unwrap();
+        assert_eq!(matrix[0][1].weight, 1.0);
+        assert_eq!(matrix[1][0].weight, 1.0);
+        assert_eq!(matrix[1][2].weight, 1.0);
+        assert_eq!(matrix[2][1].weight, 1.0);
+
+        assert_eq!(matrix[0][0].weight, 0.0);
+        assert_eq!(matrix[1][1].weight, 0.0);
+        assert_eq!(matrix[2][2].weight, 0.0);
+
+        assert_eq!(matrix[0][2].weight, 0.0);
+        assert_eq!(matrix[2][0].weight, 0.0);
+    }
+
+    #[test]
+    fn test_layout() {
+        let edge_list = vec![];
+        let model = Arc::new(RwLock::new(MockModel { counter: 0 }));
+        let runner = Runner::new(10, 1);
+        let result = runner.layout(3, edge_list, model);
+        assert_eq!(result, vec![(0.0, 10.0), (1.0, 10.0), (2.0, 10.0)]);
+    }
+}

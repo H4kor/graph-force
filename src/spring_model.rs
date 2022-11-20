@@ -89,3 +89,47 @@ impl ForceModel for SimpleSpringModel {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::graph::{new_edge_matrix, new_node_vector};
+
+    #[test]
+    fn test_simple_spring_model_attraction() {
+        let mut model = SimpleSpringModel::new(1.0);
+        let edges = new_edge_matrix(2);
+        edges.write().unwrap()[0][1].weight = 1.0;
+        edges.write().unwrap()[1][0].weight = 1.0;
+        model.init(edges, 2, 1);
+
+        let nodes = new_node_vector(2);
+        nodes[0].write().unwrap().x = 0.0;
+        nodes[0].write().unwrap().y = 0.0;
+        nodes[1].write().unwrap().x = 1.0;
+        nodes[1].write().unwrap().y = 1.0;
+
+        model.prepare(&nodes);
+        let node = model.step(&nodes, 0);
+        assert!(node.x > 0.0);
+        assert!(node.y > 0.0);
+    }
+
+    #[test]
+    fn test_simple_spring_model_repulsion() {
+        let mut model = SimpleSpringModel::new(1.0);
+        let edges = new_edge_matrix(2);
+        model.init(edges, 2, 1);
+
+        let nodes = new_node_vector(2);
+        nodes[0].write().unwrap().x = 0.0;
+        nodes[0].write().unwrap().y = 0.0;
+        nodes[1].write().unwrap().x = 1.0;
+        nodes[1].write().unwrap().y = 1.0;
+
+        model.prepare(&nodes);
+        let node = model.step(&nodes, 0);
+        assert!(node.x < 0.0);
+        assert!(node.y < 0.0);
+    }
+}

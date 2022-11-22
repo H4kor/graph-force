@@ -30,15 +30,17 @@ impl Runner {
         }
     }
 
-    pub fn layout<T: 'static + ForceModel + Sync + Send>(
+    pub fn layout(
         self: &Self,
         number_of_nodes: usize,
         edges: EdgeMatrix,
-        model: Arc<RwLock<T>>,
+        model: Box<dyn ForceModel + Send + Sync>,
     ) -> Vec<(f32, f32)> {
         // let edges = connection_matrix(size);
         let mut nodes = new_node_vector(number_of_nodes);
         let mut nodes_next = new_node_vector(number_of_nodes);
+
+        let model = Arc::new(RwLock::new(model));
 
         model
             .write()
@@ -109,7 +111,7 @@ mod test {
 
     #[test]
     fn test_layout() {
-        let model = Arc::new(RwLock::new(MockModel { counter: 0 }));
+        let model = Box::new(MockModel { counter: 0 });
         let runner = Runner::new(10, 1);
         let edges = graph::new_edge_matrix(3);
         let result = runner.layout(3, edges, model);

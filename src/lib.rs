@@ -1,22 +1,37 @@
 mod graph;
 mod model;
+mod networkx_model;
 mod runner;
 mod spring_model;
 mod utils;
 
-use std::sync::{Arc, RwLock};
-
 use pyo3::exceptions;
 use pyo3::{prelude::*, types::PyIterator};
 
-#[pyfunction(number_of_nodes, edges, "*", iter = 500, threads = 0)]
+#[pyfunction(
+    number_of_nodes,
+    edges,
+    "*",
+    iter = 500,
+    threads = 0,
+    model = "\"spring_model\""
+)]
 fn layout_from_edge_list(
     number_of_nodes: usize,
     edges: &PyAny,
     iter: usize,
     threads: usize,
+    model: &str,
 ) -> PyResult<Vec<(f32, f32)>> {
-    let model = Arc::new(RwLock::new(spring_model::SimpleSpringModel::new(1.0)));
+    let model: Box<dyn model::ForceModel + Send + Sync> = match model {
+        "spring_model" => Box::new(spring_model::SimpleSpringModel::new(1.0)),
+        "networkx_model" => Box::new(networkx_model::NetworkXModel::new()),
+        _ => {
+            return Err(PyErr::new::<exceptions::PyValueError, _>(
+                "model must be either 'spring_model' or 'networkx_model'",
+            ))
+        }
+    };
 
     let mut edge_matrix = graph::new_edge_matrix(number_of_nodes);
     match edges.extract::<&PyIterator>() {

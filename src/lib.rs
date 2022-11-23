@@ -36,6 +36,13 @@ fn layout_from_edge_list(
     let mut edge_matrix = graph::new_edge_matrix(number_of_nodes);
     match edges.extract::<&PyIterator>() {
         Ok(iter) => {
+            iter.iter()?
+                .map(|edge| edge.and_then(PyAny::extract::<(usize, usize)>))
+                .for_each(|edge| {
+                    if let Ok((u, v)) = edge {
+                        graph::add_edge(&mut edge_matrix, u, v);
+                    }
+                });
             for edge in iter {
                 let edge = edge?;
                 let edge = edge.extract::<(usize, usize)>()?;

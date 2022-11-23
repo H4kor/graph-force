@@ -3,6 +3,7 @@ use crate::model::ForceModel;
 
 /**
  * Translation of the NetworkX spring_layout function.
+ * https://networkx.org/documentation/stable/reference/generated/networkx.drawing.layout.spring_layout.html
  */
 pub struct NetworkXModel {
     edges: EdgeMatrix,

@@ -1,12 +1,39 @@
 mod graph;
 mod model;
 mod networkx_model;
+mod reader;
 mod runner;
 mod spring_model;
 mod utils;
 
 use pyo3::exceptions;
 use pyo3::{prelude::*, types::PyIterator};
+
+fn pick_model(model: &str) -> Result<Box<dyn model::ForceModel + Send + Sync>, PyErr> {
+    match model {
+        "spring_model" => Ok(Box::new(spring_model::SimpleSpringModel::new(1.0))),
+        "networkx_model" => Ok(Box::new(networkx_model::NetworkXModel::new())),
+        _ => {
+            return Err(PyErr::new::<exceptions::PyValueError, _>(
+                "model must be either 'spring_model' or 'networkx_model'",
+            ))
+        }
+    }
+}
+
+#[pyfunction(file_path, "*", iter = 500, threads = 0, model = "\"spring_model\"")]
+fn layout_from_edge_file(
+    file_path: &str,
+    iter: usize,
+    threads: usize,
+    model: &str,
+) -> PyResult<Vec<(f32, f32)>> {
+    let (size, matrix) = reader::read_graph(file_path);
+    let model = pick_model(model)?;
+
+    let r = runner::Runner::new(iter, threads);
+    Ok(r.layout(size, matrix, model))
+}
 
 #[pyfunction(
     number_of_nodes,
@@ -23,15 +50,7 @@ fn layout_from_edge_list(
     threads: usize,
     model: &str,
 ) -> PyResult<Vec<(f32, f32)>> {
-    let model: Box<dyn model::ForceModel + Send + Sync> = match model {
-        "spring_model" => Box::new(spring_model::SimpleSpringModel::new(1.0)),
-        "networkx_model" => Box::new(networkx_model::NetworkXModel::new()),
-        _ => {
-            return Err(PyErr::new::<exceptions::PyValueError, _>(
-                "model must be either 'spring_model' or 'networkx_model'",
-            ))
-        }
-    };
+    let model: Box<dyn model::ForceModel + Send + Sync> = pick_model(model)?;
 
     let mut edge_matrix = graph::new_edge_matrix(number_of_nodes);
     match edges.extract::<&PyIterator>() {
@@ -70,5 +89,6 @@ fn layout_from_edge_list(
 #[pymodule]
 fn graph_force(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(layout_from_edge_list, m)?)?;
+    m.add_function(wrap_pyfunction!(layout_from_edge_file, m)?)?;
     Ok(())
 }

@@ -1,4 +1,4 @@
-use crate::graph::{new_node_vector, EdgeMatrix};
+use crate::graph::{new_node_vector, EdgeMatrix, NodeVector};
 use crate::model::ForceModel;
 use crate::utils;
 use std::sync::{Arc, RwLock};
@@ -35,9 +35,13 @@ impl Runner {
         number_of_nodes: usize,
         edges: EdgeMatrix,
         model: Box<dyn ForceModel + Send + Sync>,
+        initial_pos: Option<NodeVector>,
     ) -> Vec<(f32, f32)> {
         // let edges = connection_matrix(size);
-        let mut nodes = new_node_vector(number_of_nodes);
+        let mut nodes = match initial_pos {
+            Some(pos) => pos,
+            None => new_node_vector(number_of_nodes),
+        };
         let mut nodes_next = new_node_vector(number_of_nodes);
 
         let model = Arc::new(RwLock::new(model));
@@ -114,7 +118,7 @@ mod test {
         let model = Box::new(MockModel { counter: 0 });
         let runner = Runner::new(10, 1);
         let edges = graph::new_edge_matrix(3);
-        let result = runner.layout(3, edges, model);
+        let result = runner.layout(3, edges, model, None);
         assert_eq!(result, vec![(0.0, 10.0), (1.0, 10.0), (2.0, 10.0)]);
     }
 }

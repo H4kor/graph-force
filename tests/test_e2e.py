@@ -40,3 +40,11 @@ def test_from_file():
     pos = graph_force.layout_from_edge_file('/tmp/edges.bin')
     assert pos is not None
     assert len(pos) == 10
+
+def test_initial_pos():
+    edges = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6)]
+    initial = [(i, i) for i in range(7)]
+    pos = graph_force.layout_from_edge_list(7, edges, iter=0, initial_pos=initial)
+    assert pos is not None
+    assert len(pos) == 7
+    assert pos == initial

@@ -6,6 +6,7 @@ mod runner;
 mod spring_model;
 mod utils;
 
+use graph::NodeVector;
 use pyo3::exceptions;
 use pyo3::{prelude::*, types::PyIterator};
 
@@ -21,18 +22,41 @@ fn pick_model(model: &str) -> Result<Box<dyn model::ForceModel + Send + Sync>, P
     }
 }
 
-#[pyfunction(file_path, "*", iter = 500, threads = 0, model = "\"spring_model\"")]
+fn initial_pos_to_node_vector(initial_pos: Option<Vec<(f32, f32)>>) -> Option<NodeVector> {
+    match initial_pos {
+        Some(pos) => {
+            let nodes = graph::new_node_vector(pos.len());
+            for (i, (x, y)) in pos.iter().enumerate() {
+                let mut node = nodes[i].write().unwrap();
+                node.x = *x;
+                node.y = *y;
+            }
+            Some(nodes)
+        }
+        None => None,
+    }
+}
+
+#[pyfunction(
+    file_path,
+    "*",
+    iter = 500,
+    threads = 0,
+    model = "\"spring_model\"",
+    initial_pos = "None"
+)]
 fn layout_from_edge_file(
     file_path: &str,
     iter: usize,
     threads: usize,
     model: &str,
+    initial_pos: Option<Vec<(f32, f32)>>,
 ) -> PyResult<Vec<(f32, f32)>> {
     let (size, matrix) = reader::read_graph(file_path);
     let model = pick_model(model)?;
 
     let r = runner::Runner::new(iter, threads);
-    Ok(r.layout(size, matrix, model))
+    Ok(r.layout(size, matrix, model, initial_pos_to_node_vector(initial_pos)))
 }
 
 #[pyfunction(
@@ -41,7 +65,8 @@ fn layout_from_edge_file(
     "*",
     iter = 500,
     threads = 0,
-    model = "\"spring_model\""
+    model = "\"spring_model\"",
+    initial_pos = "None"
 )]
 fn layout_from_edge_list(
     number_of_nodes: usize,
@@ -49,6 +74,7 @@ fn layout_from_edge_list(
     iter: usize,
     threads: usize,
     model: &str,
+    initial_pos: Option<Vec<(f32, f32)>>,
 ) -> PyResult<Vec<(f32, f32)>> {
     let model: Box<dyn model::ForceModel + Send + Sync> = pick_model(model)?;
 
@@ -83,7 +109,12 @@ fn layout_from_edge_list(
     }
 
     let r = runner::Runner::new(iter, threads);
-    Ok(r.layout(number_of_nodes, edge_matrix, model))
+    Ok(r.layout(
+        number_of_nodes,
+        edge_matrix,
+        model,
+        initial_pos_to_node_vector(initial_pos),
+    ))
 }
 
 #[pymodule]

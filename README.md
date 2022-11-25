@@ -67,7 +67,7 @@ pos = graph_force.layout_from_edge_file("edges.bin", iter=50)
 
 ### Options
 
-`iter`, `threads` and `model` are optional parameters, supported by `layout_from_edge_list` and `layout_from_edge_file`.
+`iter`, `threads` and `model`, `initial_pos` are optional parameters, supported by `layout_from_edge_list` and `layout_from_edge_file`.
 
 ```python
 pos = graph_force.layout_from_edge_list(
@@ -76,6 +76,7 @@ pos = graph_force.layout_from_edge_list(
     iter=500,  # number of iterations, default 500
     threads=0,  # number of threads, default 0 (all available)
     model="spring_model", # model to use, default "spring_model", other option is "networkx_model"
+    initial_pos=[(0.4, 0.7), (0.7, 0.2), ...], # initial positions, default None (random)
 )
 ```
 #### Available models

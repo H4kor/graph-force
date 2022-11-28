@@ -27,10 +27,13 @@ jobs:
         source venv/bin/activate
         pip install -r requirements.txt
     - name: Build
-      run: maturin build --verbose
+      run: |
+        source venv/bin/activate
+        maturin build --verbose
     - name: Run tests
       run: cargo test --verbose
     - name: Run E2E tests
       run: |
+        source venv/bin/activate
         maturin develop --release
         pytest

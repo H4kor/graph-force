@@ -27,7 +27,7 @@ jobs:
     - name: Build
       run: maturin build --verbose
     - name: Run tests
-      run: maturin test --verbose
+      run: cargo test --verbose
     - name: Run E2E tests
       run: |
         maturin develop --release

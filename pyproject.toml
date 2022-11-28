@@ -9,7 +9,7 @@ keywords = ["graph", "layout", "force-directed"]
 authors = [ { email = "niko@rerere.org", name = "Niko Abeler" } ]
 maintainers = [ { email = "niko@rerere.org", name = "Niko Abeler" } ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -20,5 +20,5 @@ classifiers = [
 
 
 [project.urls]
-homepage = "https://git.libove.org/h4kor/graph-force"
-repository = "https://git.libove.org/h4kor/graph-force"
+homepage = "https://github.com/H4kor/graph-force/"
+repository = "https://github.com/H4kor/graph-force/"
